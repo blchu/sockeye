@@ -200,7 +200,7 @@ class TransformerDecoder(Decoder, mx.gluon.HybridBlock):
             states = [step, mx.nd.transpose(encoder_outputs, axes=(1, 0, 2)), source_mask]
 
         batch_size = encoder_outputs.shape[0]
-        self_att_key_value_dummies = [mx.nd.zeros((1, batch_size, 2 * self.config.model_size),
+        self_att_key_value_dummies = [mx.nd.zeros((0, batch_size, 2 * self.config.model_size),
                                                    ctx=encoder_outputs.context,
                                                    dtype=encoder_outputs.dtype)] * self.config.num_layers
         states += self_att_key_value_dummies

@@ -431,7 +431,7 @@ class MultiHeadSelfAttention(MultiHeadAttentionBase):
         if previous_kv is not None:
             updated_kv = F.concat(previous_kv, kv, dim=0)
             # TODO: remove slicing and initialize with empty array when available in 1.6
-            kv = F.slice(updated_kv, begin=(1, None, None), end=(None, None, None))
+            #kv = F.slice(updated_kv, begin=(1, None, None), end=(None, None, None))
 
         return self._attend(F, queries, kv, lengths=input_lengths, bias=bias), updated_kv
 

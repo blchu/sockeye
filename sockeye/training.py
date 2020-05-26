@@ -198,6 +198,8 @@ class GluonEarlyStoppingTrainer:
             checkpoint_decoder: Optional[CheckpointDecoder] = None):
         logger.info("Early stopping by optimizing '%s'", self.config.early_stopping_metric)
 
+        mx.npx.set_np(shape=True, array=False)
+
         if self.config.early_stopping_metric in C.METRICS_REQUIRING_DECODER:
             utils.check_condition(checkpoint_decoder is not None,
                                   "%s requires CheckpointDecoder" % self.config.early_stopping_metric)
