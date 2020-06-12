@@ -193,7 +193,10 @@ class TransformerDecoder(Decoder, mx.gluon.HybridBlock):
             states = [step, source_mask]
 
             for layer in self.layers:
-                enc_att_kv = layer.enc_attention.ff_kv(encoder_outputs)
+                #enc_att_kv = layer.enc_attention.ff_kv(encoder_outputs)
+                enc_att_k = layer.enc_attention.ff_k(encoder_outputs).reshape(shape=(0, 0, self.heads, -1))
+                enc_att_v = layer.enc_attention.ff_v(encoder_outputs).reshape(shape=(0, 0, self.heads, -1))
+                enc_att_kv = mx.nd.reshape(mx.nd.concat(enc_att_k, enc_att_v, dim=-1), shape=(0, 0, -1))
                 states.append(mx.nd.transpose(enc_att_kv, axes=(1, 0, 2)))
         else:
             # NO encoder projection caching
@@ -302,7 +305,7 @@ class TransformerDecoder(Decoder, mx.gluon.HybridBlock):
         target = F.transpose(target, axes=(1, 0, 2))
 
         if self.config.dropout_prepost > 0.0:
-            target = F.Dropout(data=target, p=self.config.dropout_prepost)
+            target = F.Dropout(data=target.transpose(axes=(1, 0, 2)), p=self.config.dropout_prepost).transpose(axes=(1, 0, 2))
 
         new_self_att_kv = []  # type: List[Tuple]
         for layer, _self_att_kv, _enc_att_kv in zip(self.layers, self_att_kv, enc_att_kv):

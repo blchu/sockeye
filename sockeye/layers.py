@@ -425,7 +425,9 @@ class MultiHeadSelfAttention(MultiHeadAttentionBase):
 
         proj = self.ff_in(inputs)
         queries, kv_1, kv_2 = F.split(proj, num_outputs=3, axis=2)
-        kv = F.concat(kv_1, kv_2, dim=2)
+        kv_1 = kv_1.reshape(shape=(0, 0, self.heads, -1))
+        kv_2 = kv_2.reshape(shape=(0, 0, self.heads, -1))
+        kv = F.reshape(F.concat(kv_1, kv_2, dim=-1), shape=(0, 0, -1))
 
         updated_kv = kv
         if previous_kv is not None:
@@ -463,9 +465,15 @@ class MultiHeadAttention(MultiHeadAttentionBase):
             self.ff_q = quantization.QuantizableDense(in_units=depth_out, units=depth_att,
                                                       flatten=False, use_bias=False,
                                                       prefix='q2h_', dtype=dtype)
-            self.ff_kv = quantization.QuantizableDense(in_units=depth_key_value, units=2*depth_att,
-                                                       flatten=False, use_bias=False,
-                                                       prefix='kv2h_', dtype=dtype)
+            #self.ff_kv = quantization.QuantizableDense(in_units=depth_key_value, units=2*depth_att,
+            #                                           flatten=False, use_bias=False,
+            #                                           prefix='kv2h_', dtype=dtype)
+            self.ff_k = quantization.QuantizableDense(in_units=depth_key_value, units=depth_att,
+                                                      flatten=False, use_bias=False,
+                                                      prefix='k2h_', dtype=dtype)
+            self.ff_v = quantization.QuantizableDense(in_units=depth_key_value, units=depth_att,
+                                                      flatten=False, use_bias=False,
+                                                      prefix='v2h_', dtype=dtype)
 
 
     def hybrid_forward(self, F,
@@ -492,7 +500,13 @@ class MultiHeadAttention(MultiHeadAttentionBase):
         queries = self.ff_q(queries)
 
         # TODO: check whether memory has proper shape/structure for self.ff_kv projection
-        kv = projected_memory_kv if projected_memory_kv is not None else self.ff_kv(memory)
+        #kv = projected_memory_kv if projected_memory_kv is not None else self.ff_kv(memory)
+        if projected_memory_kv is not None:
+            kv = projected_memory_kv
+        else:
+            k = self.ff_k(memory).reshape(shape=(0, 0, self.heads, -1))
+            v = self.ff_v(memory).reshape(shape=(0, 0, self.heads, -1))
+            kv = F.reshape(F.concat(k, v, dim=-1), shape=(0, 0, -1))
 
         return self._attend(F, queries, kv, bias=bias, lengths=memory_lengths)
 

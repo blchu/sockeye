@@ -255,11 +255,11 @@ class TransformerProcessBlock(mx.gluon.nn.HybridBlock):
                 data = data + prev
 
             elif step == "n":
-                data = self.layer_norm(data)
+                data = self.layer_norm(data.transpose(axes=(1, 0, 2))).transpose(axes=(1, 0, 2))
 
             elif step == "d":
                 if self.dropout > 0.0:
-                    data = F.Dropout(data, p=self.dropout)
+                    data = F.Dropout(data.transpose(axes=(1, 0, 2)), p=self.dropout).transpose(axes=(1, 0, 2))
             else:
                 raise ValueError("Unknown step in sequence: %s" % step)
 
@@ -289,7 +289,7 @@ class TransformerFeedForward(mx.gluon.HybridBlock):
         h = self.ff1(x)
         h = self.act(h)
         if self.dropout > 0.0:
-            h = F.Dropout(h, p=self.dropout)
+            h = F.Dropout(h.transpose(axes=(1, 0, 2)), p=self.dropout).transpose(axes=(1, 0, 2))
         y = self.ff2(h)
         return y
 
