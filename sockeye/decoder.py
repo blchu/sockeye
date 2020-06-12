@@ -194,8 +194,8 @@ class TransformerDecoder(Decoder, mx.gluon.HybridBlock):
 
             for layer in self.layers:
                 #enc_att_kv = layer.enc_attention.ff_kv(encoder_outputs)
-                enc_att_k = layer.enc_attention.ff_k(encoder_outputs).reshape(shape=(0, 0, self.heads, -1))
-                enc_att_v = layer.enc_attention.ff_v(encoder_outputs).reshape(shape=(0, 0, self.heads, -1))
+                enc_att_k = layer.enc_attention.ff_k(encoder_outputs).reshape(shape=(0, 0, layer.enc_attention.heads, -1))
+                enc_att_v = layer.enc_attention.ff_v(encoder_outputs).reshape(shape=(0, 0, layer.enc_attention.heads, -1))
                 enc_att_kv = mx.nd.reshape(mx.nd.concat(enc_att_k, enc_att_v, dim=-1), shape=(0, 0, -1))
                 states.append(mx.nd.transpose(enc_att_kv, axes=(1, 0, 2)))
         else:
